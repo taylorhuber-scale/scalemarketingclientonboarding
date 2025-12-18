@@ -1,0 +1,1569 @@
+<html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Onboarding Status Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #f5f5f5;
+            padding: 15px;
+            font-size: 12px;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            border-bottom: 3px solid #2196F3;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .header h1 {
+            color: #202124;
+            font-size: 22px;
+            margin-bottom: 8px;
+            border: none;
+            background: transparent;
+            width: 100%;
+            padding: 5px;
+        }
+        
+        .save-indicator {
+            position: absolute;
+            top: 0;
+            right: 0;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            background: #e6f4ea;
+            color: #137333;
+            font-weight: 600;
+        }
+        
+        .save-indicator.saving {
+            background: #fef7e0;
+            color: #ea8600;
+        }
+        
+        .header-info {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .section {
+            margin-bottom: 25px;
+            padding-bottom: 25px;
+            border-bottom: 2px solid #E0E0E0;
+        }
+        
+        .section:last-child {
+            border-bottom: none;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            color: #2196F3;
+            margin-bottom: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-title:hover {
+            opacity: 0.8;
+        }
+        
+        .progress-overview {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .progress-card {
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .progress-card.on-track {
+            background: #e6f4ea;
+        }
+        
+        .progress-card.off-track {
+            background: #fce8e6;
+        }
+        
+        .progress-card.stuck {
+            background: #fef7e0;
+        }
+        
+        .progress-card .number {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 3px;
+        }
+        
+        .progress-card .label {
+            font-size: 13px;
+            color: #5f6368;
+        }
+        
+        .gantt-container {
+            overflow-x: auto;
+            margin-bottom: 25px;
+            border: 1px solid #dadce0;
+            border-radius: 6px;
+            padding: 12px;
+            background: #fafafa;
+        }
+        
+        .gantt-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .gantt-controls {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .gantt-controls input {
+            padding: 4px 8px;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+        
+        .gantt-chart {
+            position: relative;
+            min-height: 300px;
+        }
+        
+        .gantt-header-row {
+            display: flex;
+            border-bottom: 2px solid #dadce0;
+            margin-bottom: 15px;
+        }
+        
+        .gantt-header-label {
+            width: 150px;
+            padding: 8px 6px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #202124;
+            background: #f8f9fa;
+            border-right: 2px solid #dadce0;
+        }
+        
+        .gantt-timeline {
+            display: flex;
+            flex: 1;
+        }
+        
+        .gantt-date {
+            flex: 1;
+            text-align: center;
+            font-size: 9px;
+            color: #202124;
+            font-weight: 600;
+            line-height: 1.3;
+            padding: 4px;
+            border-right: 1px solid #e0e0e0;
+        }
+        
+        .gantt-date:last-child {
+            border-right: none;
+        }
+        
+        .gantt-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 6px;
+            min-height: 32px;
+            position: relative;
+        }
+        
+        .gantt-task-name {
+            width: 150px;
+            padding: 6px;
+            font-size: 11px;
+            font-weight: 500;
+            color: #202124;
+        }
+        
+        .gantt-bars-container {
+            flex: 1;
+            position: relative;
+            display: flex;
+            background: repeating-linear-gradient(
+                to right,
+                transparent,
+                transparent calc(100% / var(--weeks) - 1px),
+                #e0e0e0 calc(100% / var(--weeks) - 1px),
+                #e0e0e0 calc(100% / var(--weeks))
+            );
+            min-height: 32px;
+        }
+        
+        .gantt-bar {
+            height: 24px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 6px;
+            font-size: 9px;
+            color: white;
+            font-weight: 600;
+            cursor: move;
+            position: relative;
+        }
+        
+        .gantt-bar.scale {
+            background: #1976D2;
+        }
+        
+        .gantt-bar.client {
+            background: #FF9800;
+        }
+        
+        .gantt-bar.third-party {
+            background: #AB47BC;
+        }
+        
+        .gantt-bar.none {
+            background: #9E9E9E;
+        }
+        
+        .task-section-header {
+            background: #f1f3f4;
+            padding: 8px;
+            font-weight: 600;
+            color: #FF9800;
+            margin-top: 15px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        .task-section-header:hover {
+            background: #e8eaed;
+        }
+        
+        .collapse-icon {
+            font-size: 16px;
+            color: #5f6368;
+            user-select: none;
+            font-weight: bold;
+            min-width: 20px;
+            display: inline-block;
+        }
+        
+        .task-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+        }
+        
+        .task-table th {
+            background: #2196F3;
+            color: white;
+            padding: 8px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .task-table td {
+            padding: 8px;
+            border-bottom: 1px solid #dadce0;
+            font-size: 11px;
+        }
+        
+        .task-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .status-select {
+            padding: 4px 8px;
+            border-radius: 16px;
+            border: none;
+            font-size: 10px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .status-on-track {
+            background: #e6f4ea;
+            color: #137333;
+        }
+        
+        .status-off-track {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+        
+        .status-stuck {
+            background: #fce8e6;
+            color: #c5221f;
+        }
+        
+        .status-n-a {
+            background: #f5f5f5;
+            color: #757575;
+        }
+        
+        .status-done {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .responsible-select {
+            padding: 4px 8px;
+            border-radius: 16px;
+            border: none;
+            font-size: 10px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .responsible-scale {
+            background: #BBDEFB;
+            color: #1976D2;
+        }
+        
+        .responsible-client {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+        
+        .responsible-third-party {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+        
+        .responsible-none {
+            background: #f5f5f5;
+            color: #757575;
+        }
+        
+        .responsible-n-a {
+            background: #f5f5f5;
+            color: #757575;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .add-task-btn, .add-section-btn {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .add-task-btn:hover, .add-section-btn:hover {
+            background: #1976D2;
+        }
+        
+        .clear-btn {
+            background: #FF9800;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .clear-btn:hover {
+            background: #F57C00;
+        }
+        
+        input[type="text"], input[type="date"], select {
+            padding: 6px;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            font-size: 11px;
+            width: 100%;
+        }
+        
+        .delete-btn {
+            background: #FF9800;
+            color: white;
+            border: none;
+            padding: 3px 6px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 9px;
+        }
+        
+        .delete-btn:hover {
+            background: #F57C00;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #5f6368;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 400px;
+            text-align: center;
+        }
+        
+        .modal-content h3 {
+            margin-bottom: 15px;
+            color: #202124;
+        }
+        
+        .modal-content p {
+            margin-bottom: 25px;
+            color: #5f6368;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        .modal-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .modal-btn.cancel {
+            background: #f1f3f4;
+            color: #202124;
+        }
+        
+        .modal-btn.confirm {
+            background: #FF9800;
+            color: white;
+        }
+        
+        .gantt-checkbox {
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="mainContainer">
+        <div class="loading" id="loadingIndicator" style="display: none;">Loading your data...</div>
+        
+        <div id="appContent" style="display: block;">
+            <div class="header">
+                <input type="text" id="documentTitle" value="Client Onboarding Status" style="font-size: 22px; font-weight: bold; color: #202124; border: none; background: transparent; width: 100%; padding: 5px; font-family: 'Arial', sans-serif;" onchange="saveData()">
+                <div class="save-indicator" id="saveIndicator">Ready</div>
+                <div class="header-info">
+                    <div class="info-field">
+                        <label>Client Name</label>
+                        <input type="text" id="clientName" placeholder="Enter client name" onchange="saveData()">
+                    </div>
+                    <div class="info-field">
+                        <label>Target Go-Live Date</label>
+                        <input type="date" id="goLiveDate" onchange="saveData()">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title" onclick="toggleSection('progress-overview')">
+                    <span class="collapse-icon" id="icon-progress-overview">▼</span>
+                    Progress Overview
+                </h2>
+                <div id="content-progress-overview">
+                <div style="margin-bottom: 10px; font-weight: 600; color: #FF9800; font-size: 12px;">By Status</div>
+                <div class="progress-overview" style="display: flex; flex-wrap: nowrap;">
+                    <div class="progress-card" style="background: #BBDEFB; flex: 1;">
+                        <div class="number" id="onTrackCount" style="color: #1976D2;">2</div>
+                        <div class="label">On Track</div>
+                    </div>
+                    <div class="progress-card" style="background: #FFE0B2; flex: 1;">
+                        <div class="number" id="offTrackCount" style="color: #F57C00;">0</div>
+                        <div class="label">Off Track</div>
+                    </div>
+                    <div class="progress-card" style="background: #FFCCBC; flex: 1;">
+                        <div class="number" id="stuckCount" style="color: #E64A19;">1</div>
+                        <div class="label">Stuck</div>
+                    </div>
+                    <div class="progress-card" style="background: #C8E6C9; flex: 1;">
+                        <div class="number" id="doneCount" style="color: #388E3C;">0</div>
+                        <div class="label">Done</div>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 10px; margin-top: 20px; font-weight: 600; color: #FF9800; font-size: 12px;">By Responsibility</div>
+                <div style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: nowrap;">
+                    <div class="progress-card" style="background: #BBDEFB; flex: 1;">
+                        <div class="number" id="scaleCount" style="color: #1976D2;">1</div>
+                        <div class="label">Scale</div>
+                    </div>
+                    <div class="progress-card" style="background: #fff3e0; flex: 1;">
+                        <div class="number" id="clientCount" style="color: #f57c00;">1</div>
+                        <div class="label">Client</div>
+                    </div>
+                    <div class="progress-card" style="background: #f3e5f5; flex: 1;">
+                        <div class="number" id="thirdPartyCount" style="color: #7b1fa2;">1</div>
+                        <div class="label">Third Party</div>
+                    </div>
+                </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title" onclick="toggleSection('task-list')">
+                    <span class="collapse-icon" id="icon-task-list">▼</span>
+                    Task List &amp; Status
+                </h2>
+                <div id="content-task-list">
+                <div id="taskSections"><div>
+                    <div class="task-section-header">
+                        <input type="text" value="Discovery &amp; Planning" onchange="updateSectionName(0, this.value)" style="background: transparent; border: none; font-weight: 600; color: #202124; font-size: 14px; width: 80%;">
+                        <button class="delete-btn" onclick="deleteSection(0)" style="float: right;">Delete Section</button>
+                    </div>
+                    <table class="task-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 4%">Gantt</th>
+                                <th style="width: 20%">Task Name</th>
+                                <th style="width: 25%">Description</th>
+                                <th style="width: 13%">Responsibility</th>
+                                <th style="width: 10%">Status</th>
+                                <th style="width: 9%">Start Date</th>
+                                <th style="width: 9%">Due Date</th>
+                                <th style="width: 6%">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="section-0">
+                        <tr>
+                        <td style="text-align: center;">
+                            <input type="checkbox" class="gantt-checkbox" checked="" onchange="toggleGantt(0, 0, this.checked)">
+                        </td>
+                        <td><input type="text" value="Initial kickoff meeting" onchange="updateTask(0, 0, 'name', this.value)"></td>
+                        <td><input type="text" value="Align on project goals and timeline" placeholder="Add description..." onchange="updateTask(0, 0, 'description', this.value)"></td>
+                        <td>
+                            <select class="responsible-select responsible-scale" onchange="updateTask(0, 0, 'responsible', this.value)">
+                                <option value="">Select...</option>
+                                <option value="Scale" selected="">Scale</option>
+                                <option value="Client">Client</option>
+                                <option value="Third Party">Third Party</option>
+                                <option value="N/A">N/A</option>
+                            </select>
+                        </td>
+                        <td>
+                            <select class="status-select status-on-track" onchange="updateTask(0, 0, 'status', this.value)">
+                                <option value="on-track" selected="">On Track</option>
+                                <option value="off-track">Off Track</option>
+                                <option value="stuck">Stuck</option>
+                                <option value="done">Done</option>
+                                <option value="n-a">N/A</option>
+                            </select>
+                        </td>
+                        <td><input type="date" value="2025-01-15" onblur="updateTask(0, 0, 'startDate', this.value)" onfocus="this.showPicker()"></td>
+                        <td><input type="date" value="2025-01-20" onblur="updateTask(0, 0, 'dueDate', this.value)" onfocus="this.showPicker()"></td>
+                        <td><button class="delete-btn" onclick="deleteTask(0, 0)">Delete</button></td>
+                    </tr><tr>
+                        <td style="text-align: center;">
+                            <input type="checkbox" class="gantt-checkbox" checked="" onchange="toggleGantt(0, 1, this.checked)">
+                        </td>
+                        <td><input type="text" value="Requirements gathering" onchange="updateTask(0, 1, 'name', this.value)"></td>
+                        <td><input type="text" value="Document all business requirements" placeholder="Add description..." onchange="updateTask(0, 1, 'description', this.value)"></td>
+                        <td>
+                            <select class="responsible-select responsible-client" onchange="updateTask(0, 1, 'responsible', this.value)">
+                                <option value="">Select...</option>
+                                <option value="Scale">Scale</option>
+                                <option value="Client" selected="">Client</option>
+                                <option value="Third Party">Third Party</option>
+                                <option value="N/A">N/A</option>
+                            </select>
+                        </td>
+                        <td>
+                            <select class="status-select status-on-track" onchange="updateTask(0, 1, 'status', this.value)">
+                                <option value="on-track" selected="">On Track</option>
+                                <option value="off-track">Off Track</option>
+                                <option value="stuck">Stuck</option>
+                                <option value="done">Done</option>
+                                <option value="n-a">N/A</option>
+                            </select>
+                        </td>
+                        <td><input type="date" value="2025-01-21" onblur="updateTask(0, 1, 'startDate', this.value)" onfocus="this.showPicker()"></td>
+                        <td><input type="date" value="2025-02-05" onblur="updateTask(0, 1, 'dueDate', this.value)" onfocus="this.showPicker()"></td>
+                        <td><button class="delete-btn" onclick="deleteTask(0, 1)">Delete</button></td>
+                    </tr></tbody>
+                    </table>
+                    <button class="add-task-btn" onclick="addTask(0)" style="margin-top: 8px;">+ Add Task</button>
+                    
+                </div><div>
+                    <div class="task-section-header">
+                        <input type="text" value="Implementation" onchange="updateSectionName(1, this.value)" style="background: transparent; border: none; font-weight: 600; color: #202124; font-size: 14px; width: 80%;">
+                        <button class="delete-btn" onclick="deleteSection(1)" style="float: right;">Delete Section</button>
+                    </div>
+                    <table class="task-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 4%">Gantt</th>
+                                <th style="width: 20%">Task Name</th>
+                                <th style="width: 25%">Description</th>
+                                <th style="width: 13%">Responsibility</th>
+                                <th style="width: 10%">Status</th>
+                                <th style="width: 9%">Start Date</th>
+                                <th style="width: 9%">Due Date</th>
+                                <th style="width: 6%">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="section-1">
+                        <tr>
+                        <td style="text-align: center;">
+                            <input type="checkbox" class="gantt-checkbox" checked="" onchange="toggleGantt(1, 0, this.checked)">
+                        </td>
+                        <td><input type="text" value="System configuration" onchange="updateTask(1, 0, 'name', this.value)"></td>
+                        <td><input type="text" value="Waiting on vendor access" placeholder="Add description..." onchange="updateTask(1, 0, 'description', this.value)"></td>
+                        <td>
+                            <select class="responsible-select responsible-third-party" onchange="updateTask(1, 0, 'responsible', this.value)">
+                                <option value="">Select...</option>
+                                <option value="Scale">Scale</option>
+                                <option value="Client">Client</option>
+                                <option value="Third Party" selected="">Third Party</option>
+                                <option value="N/A">N/A</option>
+                            </select>
+                        </td>
+                        <td>
+                            <select class="status-select status-stuck" onchange="updateTask(1, 0, 'status', this.value)">
+                                <option value="on-track">On Track</option>
+                                <option value="off-track">Off Track</option>
+                                <option value="stuck" selected="">Stuck</option>
+                                <option value="done">Done</option>
+                                <option value="n-a">N/A</option>
+                            </select>
+                        </td>
+                        <td><input type="date" value="2025-02-06" onblur="updateTask(1, 0, 'startDate', this.value)" onfocus="this.showPicker()"></td>
+                        <td><input type="date" value="2025-02-25" onblur="updateTask(1, 0, 'dueDate', this.value)" onfocus="this.showPicker()"></td>
+                        <td><button class="delete-btn" onclick="deleteTask(1, 0)">Delete</button></td>
+                    </tr></tbody>
+                    </table>
+                    <button class="add-task-btn" onclick="addTask(1)" style="margin-top: 8px;">+ Add Task</button>
+                    
+                </div></div>
+                <div class="button-group">
+                    <button class="add-section-btn" onclick="addSection()">+ Add Section</button>
+                    <button class="clear-btn" onclick="clearAllData()">Clear All Data</button>
+                </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title" onclick="toggleSection('gantt-chart')">
+                    <span class="collapse-icon" id="icon-gantt-chart">▼</span>
+                    Gantt Chart Timeline
+                </h2>
+                <div id="content-gantt-chart">
+                <div class="gantt-container">
+                    <div class="gantt-header">
+                        <div style="font-weight: 600; color: #202124;">Project Timeline (Auto-calculated from selected tasks)</div>
+                        <div class="gantt-controls">
+                            <input type="date" id="ganttStartDate" readonly="" style="background: #f1f3f4;">
+                            <span style="padding: 6px;">to</span>
+                            <input type="date" id="ganttEndDate" readonly="" style="background: #f1f3f4;">
+                        </div>
+                    </div>
+                    <div id="ganttChart" class="gantt-chart"><div class="gantt-header-row"><div class="gantt-header-label">Task Name</div><div class="gantt-timeline"><div class="gantt-date">Week 1<br>Jan 13</div><div class="gantt-date">Week 2<br>Jan 20</div><div class="gantt-date">Week 3<br>Jan 27</div><div class="gantt-date">Week 4<br>Feb 3</div><div class="gantt-date">Week 5<br>Feb 10</div><div class="gantt-date">Week 6<br>Feb 17</div><div class="gantt-date">Week 7<br>Feb 24</div></div></div>
+                    <div class="gantt-row">
+                        <div class="gantt-task-name">Initial kickoff meeting</div>
+                        <div class="gantt-bars-container" style="--weeks: 7">
+                            <div class="gantt-bar scale" style="left: 4.081632653061225%; width: 12.244897959183673%; min-width: 60px;">
+                                01/15/2025 - 01/20/2025
+                            </div>
+                        </div>
+                    </div>
+                
+                    <div class="gantt-row">
+                        <div class="gantt-task-name">Requirements gathering</div>
+                        <div class="gantt-bars-container" style="--weeks: 7">
+                            <div class="gantt-bar client" style="left: 16.3265306122449%; width: 32.6530612244898%; min-width: 60px;">
+                                01/21/2025 - 02/05/2025
+                            </div>
+                        </div>
+                    </div>
+                
+                    <div class="gantt-row">
+                        <div class="gantt-task-name">System configuration</div>
+                        <div class="gantt-bars-container" style="--weeks: 7">
+                            <div class="gantt-bar third-party" style="left: 48.97959183673469%; width: 40.816326530612244%; min-width: 60px;">
+                                02/06/2025 - 02/25/2025
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title" onclick="toggleSection('tasks-by-responsibility')">
+                    <span class="collapse-icon" id="icon-tasks-by-responsibility">▼</span>
+                    Tasks by Responsibility
+                </h2>
+                <div id="content-tasks-by-responsibility">
+                <div id="tasksByResponsible"><div>
+                        <div class="task-section-header" style="background: #e8eaf6; display: flex; align-items: center; gap: 10px;" onclick="toggleSection('responsible-content-Scale')">
+                            <span class="collapse-icon" id="icon-responsible-content-Scale" style="font-size: 16px; font-weight: bold; color: #5f6368;">▼</span>
+                            <span style="font-weight: 600; color: #1976D2; font-size: 12px;">Scale Tasks (1)</span>
+                        </div>
+                        <div id="content-responsible-content-Scale" style="display: block;">
+                        <table class="task-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 4%">Gantt</th>
+                                    <th style="width: 15%">Section</th>
+                                    <th style="width: 18%">Task Name</th>
+                                    <th style="width: 20%">Description</th>
+                                    <th style="width: 10%">Status</th>
+                                    <th style="width: 11%">Start Date</th>
+                                    <th style="width: 11%">Due Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="responsible-Scale">
+                            <tr>
+                            <td style="text-align: center;">
+                                <input type="checkbox" class="gantt-checkbox" checked="" disabled="">
+                            </td>
+                            <td>Discovery &amp; Planning</td>
+                            <td>Initial kickoff meeting</td>
+                            <td>Align on project goals and timeline</td>
+                            <td>
+                                <span class="status-select status-on-track" style="display: inline-block; padding: 4px 8px;">
+                                    On Track
+                                </span>
+                            </td>
+                            <td>01-15-2025</td>
+                            <td>01-20-2025</td>
+                        </tr></tbody>
+                        </table>
+                        </div>
+                    </div><div>
+                        <div class="task-section-header" style="background: #fff3e0; display: flex; align-items: center; gap: 10px;" onclick="toggleSection('responsible-content-Client')">
+                            <span class="collapse-icon" id="icon-responsible-content-Client" style="font-size: 16px; font-weight: bold; color: #5f6368;">▼</span>
+                            <span style="font-weight: 600; color: #F57C00; font-size: 12px;">Client Tasks (1)</span>
+                        </div>
+                        <div id="content-responsible-content-Client" style="display: block;">
+                        <table class="task-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 4%">Gantt</th>
+                                    <th style="width: 15%">Section</th>
+                                    <th style="width: 18%">Task Name</th>
+                                    <th style="width: 20%">Description</th>
+                                    <th style="width: 10%">Status</th>
+                                    <th style="width: 11%">Start Date</th>
+                                    <th style="width: 11%">Due Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="responsible-Client">
+                            <tr>
+                            <td style="text-align: center;">
+                                <input type="checkbox" class="gantt-checkbox" checked="" disabled="">
+                            </td>
+                            <td>Discovery &amp; Planning</td>
+                            <td>Requirements gathering</td>
+                            <td>Document all business requirements</td>
+                            <td>
+                                <span class="status-select status-on-track" style="display: inline-block; padding: 4px 8px;">
+                                    On Track
+                                </span>
+                            </td>
+                            <td>01-21-2025</td>
+                            <td>02-05-2025</td>
+                        </tr></tbody>
+                        </table>
+                        </div>
+                    </div><div>
+                        <div class="task-section-header" style="background: #f3e5f5; display: flex; align-items: center; gap: 10px;" onclick="toggleSection('responsible-content-Third-Party')">
+                            <span class="collapse-icon" id="icon-responsible-content-Third-Party" style="font-size: 16px; font-weight: bold; color: #5f6368;">▼</span>
+                            <span style="font-weight: 600; color: #7b1fa2; font-size: 12px;">Third Party Tasks (1)</span>
+                        </div>
+                        <div id="content-responsible-content-Third-Party" style="display: block;">
+                        <table class="task-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 4%">Gantt</th>
+                                    <th style="width: 15%">Section</th>
+                                    <th style="width: 18%">Task Name</th>
+                                    <th style="width: 20%">Description</th>
+                                    <th style="width: 10%">Status</th>
+                                    <th style="width: 11%">Start Date</th>
+                                    <th style="width: 11%">Due Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="responsible-Third-Party">
+                            <tr>
+                            <td style="text-align: center;">
+                                <input type="checkbox" class="gantt-checkbox" checked="" disabled="">
+                            </td>
+                            <td>Implementation</td>
+                            <td>System configuration</td>
+                            <td>Waiting on vendor access</td>
+                            <td>
+                                <span class="status-select status-stuck" style="display: inline-block; padding: 4px 8px;">
+                                    Stuck
+                                </span>
+                            </td>
+                            <td>02-06-2025</td>
+                            <td>02-25-2025</td>
+                        </tr></tbody>
+                        </table>
+                        </div>
+                    </div></div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title" onclick="toggleSection('completed-tasks')">
+                    <span class="collapse-icon" id="icon-completed-tasks">▼</span>
+                    Completed Tasks
+                </h2>
+                <div id="content-completed-tasks">
+                <div id="doneTasks"><div style="text-align: center; padding: 20px; color: #5f6368; font-size: 11px;">No completed tasks yet</div></div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; padding: 20px; border-top: 1px solid #E0E0E0; margin-top: 20px;">
+                <button onclick="downloadNewClientVersion()" style="background: #4CAF50; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600;">
+                    📥 Download New Template Copy
+                </button>
+                <div style="font-size: 10px; color: #5f6368; margin-top: 8px;">Creates a fresh template. Each downloaded file has its own independent data storage.</div>
+            </div>
+        </div>
+        
+        <div class="modal" id="clearModal">
+            <div class="modal-content">
+                <h3>Clear All Data?</h3>
+                <p>Are you sure you want to clear all data for this client? This cannot be undone.</p>
+                <div class="modal-buttons">
+                    <button class="modal-btn cancel" onclick="closeModal()">Cancel</button>
+                    <button class="modal-btn confirm" onclick="confirmClear()">Clear All</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        window.reopenTask = function(sectionIndex, taskIndex) {
+            sections[sectionIndex].tasks[taskIndex].status = 'on-track';
+            saveData();
+            renderSections();
+            renderTasksByResponsible();
+            renderDoneTasks();
+            renderGantt();
+            updateProgress();
+        };
+        
+        function formatDateDisplay(isoDate) {
+            if (!isoDate || isoDate === '') return '';
+            const parts = isoDate.split('-');
+            if (parts.length === 3) {
+                return `${parts[1]}-${parts[2]}-${parts[0]}`;
+            }
+            return isoDate;
+        }
+        
+        let sections = [];
+        let saveTimeout;
+        
+        // Generate or retrieve unique file ID - this makes each downloaded file independent
+        const FILE_ID = 'file-1766094126541-opbq9v3fi';
+        
+        const STORAGE_KEY = 'onboarding-' + FILE_ID;
+        
+        async function loadData() {
+            try {
+                if (window.storage && typeof window.storage.get === 'function') {
+                    const result = await window.storage.get('onboarding-data', false);
+                    
+                    if (result && result.value) {
+                        const data = JSON.parse(result.value);
+                        sections = data.sections || getDefaultSections();
+                        document.getElementById('clientName').value = data.clientName || '';
+                        document.getElementById('goLiveDate').value = data.goLiveDate || '';
+                        document.getElementById('documentTitle').value = data.documentTitle || 'Client Onboarding Status';
+                    } else {
+                        sections = getDefaultSections();
+                    }
+                } else {
+                    const storedData = localStorage.getItem(STORAGE_KEY);
+                    if (storedData) {
+                        const data = JSON.parse(storedData);
+                        sections = data.sections || getDefaultSections();
+                        document.getElementById('clientName').value = data.clientName || '';
+                        document.getElementById('goLiveDate').value = data.goLiveDate || '';
+                        document.getElementById('documentTitle').value = data.documentTitle || 'Client Onboarding Status';
+                    } else {
+                        sections = getDefaultSections();
+                    }
+                }
+            } catch (error) {
+                console.log('Loading from storage, using defaults:', error);
+                sections = getDefaultSections();
+            }
+            
+            document.getElementById('loadingIndicator').style.display = 'none';
+            document.getElementById('appContent').style.display = 'block';
+            renderSections();
+            renderTasksByResponsible();
+            renderDoneTasks();
+            renderGantt();
+        }
+        
+        function getDefaultSections() {
+            return [
+                {
+                    name: "Discovery & Planning",
+                    tasks: [
+                        {
+                            name: "Initial kickoff meeting",
+                            responsible: "Scale",
+                            status: "on-track",
+                            startDate: "2025-01-15",
+                            dueDate: "2025-01-20",
+                            description: "Align on project goals and timeline",
+                            showInGantt: true
+                        },
+                        {
+                            name: "Requirements gathering",
+                            responsible: "Client",
+                            status: "on-track",
+                            startDate: "2025-01-21",
+                            dueDate: "2025-02-05",
+                            description: "Document all business requirements",
+                            showInGantt: true
+                        }
+                    ]
+                },
+                {
+                    name: "Implementation",
+                    tasks: [
+                        {
+                            name: "System configuration",
+                            responsible: "Third Party",
+                            status: "stuck",
+                            startDate: "2025-02-06",
+                            dueDate: "2025-02-25",
+                            description: "Waiting on vendor access",
+                            showInGantt: true
+                        }
+                    ]
+                }
+            ];
+        }
+        
+        async function saveData() {
+            const indicator = document.getElementById('saveIndicator');
+            indicator.textContent = 'Saving...';
+            indicator.className = 'save-indicator saving';
+            
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(async () => {
+                try {
+                    const data = {
+                        sections: sections,
+                        clientName: document.getElementById('clientName').value,
+                        goLiveDate: document.getElementById('goLiveDate').value,
+                        documentTitle: document.getElementById('documentTitle').value
+                    };
+                    
+                    if (window.storage && typeof window.storage.set === 'function') {
+                        await window.storage.set('onboarding-data', JSON.stringify(data), false);
+                        indicator.textContent = 'Synced ☁️';
+                    } else {
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+                        indicator.textContent = 'Saved ✓';
+                    }
+                    indicator.className = 'save-indicator';
+                } catch (error) {
+                    console.error('Save error:', error);
+                    indicator.textContent = 'Error saving';
+                    indicator.style.background = '#fce8e6';
+                    indicator.style.color = '#c5221f';
+                }
+            }, 500);
+        }
+        
+        function renderSections() {
+            const container = document.getElementById('taskSections');
+            container.innerHTML = '';
+            
+            sections.forEach((section, sectionIndex) => {
+                const sectionDiv = document.createElement('div');
+                sectionDiv.innerHTML = `
+                    <div class="task-section-header">
+                        <input type="text" value="${section.name}" 
+                               onchange="updateSectionName(${sectionIndex}, this.value)"
+                               style="background: transparent; border: none; font-weight: 600; color: #202124; font-size: 14px; width: 80%;">
+                        <button class="delete-btn" onclick="deleteSection(${sectionIndex})" style="float: right;">Delete Section</button>
+                    </div>
+                    <table class="task-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 4%">Gantt</th>
+                                <th style="width: 20%">Task Name</th>
+                                <th style="width: 25%">Description</th>
+                                <th style="width: 13%">Responsibility</th>
+                                <th style="width: 10%">Status</th>
+                                <th style="width: 9%">Start Date</th>
+                                <th style="width: 9%">Due Date</th>
+                                <th style="width: 6%">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="section-${sectionIndex}">
+                        </tbody>
+                    </table>
+                    <button class="add-task-btn" onclick="addTask(${sectionIndex})" style="margin-top: 8px;">+ Add Task</button>
+                    </div>
+                `;
+                container.appendChild(sectionDiv);
+                
+                const tbody = document.getElementById(`section-${sectionIndex}`);
+                section.tasks.forEach((task, taskIndex) => {
+                    if (task.status === 'done') return;
+                    
+                    const row = document.createElement('tr');
+                    const responsibleClass = task.responsible === 'Scale' ? 'responsible-scale' : 
+                                           task.responsible === 'Client' ? 'responsible-client' : 
+                                           task.responsible === 'Third Party' ? 'responsible-third-party' : 
+                                           task.responsible === 'N/A' ? 'responsible-n-a' : 'responsible-none';
+                    
+                    row.innerHTML = `
+                        <td style="text-align: center;">
+                            <input type="checkbox" class="gantt-checkbox" ${task.showInGantt ? 'checked' : ''} 
+                                   onchange="toggleGantt(${sectionIndex}, ${taskIndex}, this.checked)">
+                        </td>
+                        <td><input type="text" value="${task.name}" onchange="updateTask(${sectionIndex}, ${taskIndex}, 'name', this.value)"></td>
+                        <td><input type="text" value="${task.description || ''}" placeholder="Add description..." onchange="updateTask(${sectionIndex}, ${taskIndex}, 'description', this.value)"></td>
+                        <td>
+                            <select class="responsible-select ${responsibleClass}" onchange="updateTask(${sectionIndex}, ${taskIndex}, 'responsible', this.value)">
+                                <option value="">Select...</option>
+                                <option value="Scale" ${task.responsible === 'Scale' ? 'selected' : ''}>Scale</option>
+                                <option value="Client" ${task.responsible === 'Client' ? 'selected' : ''}>Client</option>
+                                <option value="Third Party" ${task.responsible === 'Third Party' ? 'selected' : ''}>Third Party</option>
+                                <option value="N/A" ${task.responsible === 'N/A' ? 'selected' : ''}>N/A</option>
+                            </select>
+                        </td>
+                        <td>
+                            <select class="status-select status-${task.status}" onchange="updateTask(${sectionIndex}, ${taskIndex}, 'status', this.value)">
+                                <option value="on-track" ${task.status === 'on-track' ? 'selected' : ''}>On Track</option>
+                                <option value="off-track" ${task.status === 'off-track' ? 'selected' : ''}>Off Track</option>
+                                <option value="stuck" ${task.status === 'stuck' ? 'selected' : ''}>Stuck</option>
+                                <option value="done" ${task.status === 'done' ? 'selected' : ''}>Done</option>
+                                <option value="n-a" ${task.status === 'n-a' ? 'selected' : ''}>N/A</option>
+                            </select>
+                        </td>
+                        <td><input type="date" value="${task.startDate}" onblur="updateTask(${sectionIndex}, ${taskIndex}, 'startDate', this.value)" onfocus="this.showPicker()"></td>
+                        <td><input type="date" value="${task.dueDate}" onblur="updateTask(${sectionIndex}, ${taskIndex}, 'dueDate', this.value)" onfocus="this.showPicker()"></td>
+                        <td><button class="delete-btn" onclick="deleteTask(${sectionIndex}, ${taskIndex})">Delete</button></td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            });
+            
+            updateProgress();
+        }
+        
+        function renderTasksByResponsible() {
+            const container = document.getElementById('tasksByResponsible');
+            container.innerHTML = '';
+            
+            const responsibleParties = ['Scale', 'Client', 'Third Party'];
+            
+            responsibleParties.forEach(party => {
+                const tasksForParty = [];
+                sections.forEach((section, sectionIndex) => {
+                    section.tasks.forEach((task, taskIndex) => {
+                        if (task.responsible === party && task.status !== 'done') {
+                            tasksForParty.push({
+                                task: task,
+                                sectionIndex: sectionIndex,
+                                taskIndex: taskIndex,
+                                sectionName: section.name
+                            });
+                        }
+                    });
+                });
+                
+                if (tasksForParty.length > 0) {
+                    const partyClass = party === 'Scale' ? 'responsible-scale' : 
+                                      party === 'Client' ? 'responsible-client' : 'responsible-third-party';
+                    const partyColor = party === 'Scale' ? '#e8eaf6' : 
+                                      party === 'Client' ? '#fff3e0' : '#f3e5f5';
+                    const partyTextColor = party === 'Scale' ? '#1976D2' : 
+                                          party === 'Client' ? '#F57C00' : '#7b1fa2';
+                    
+                    const sectionDiv = document.createElement('div');
+                    sectionDiv.innerHTML = `
+                        <div class="task-section-header" style="background: ${partyColor}; display: flex; align-items: center; gap: 10px;" onclick="toggleSection('responsible-content-${party.replace(' ', '-')}')">
+                            <span class="collapse-icon" id="icon-responsible-content-${party.replace(' ', '-')}" style="font-size: 16px; font-weight: bold; color: #5f6368;">▼</span>
+                            <span style="font-weight: 600; color: ${partyTextColor}; font-size: 12px;">${party} Tasks (${tasksForParty.length})</span>
+                        </div>
+                        <div id="content-responsible-content-${party.replace(' ', '-')}" style="display: block;">
+                        <table class="task-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 4%">Gantt</th>
+                                    <th style="width: 15%">Section</th>
+                                    <th style="width: 18%">Task Name</th>
+                                    <th style="width: 20%">Description</th>
+                                    <th style="width: 10%">Status</th>
+                                    <th style="width: 11%">Start Date</th>
+                                    <th style="width: 11%">Due Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="responsible-${party.replace(' ', '-')}">
+                            </tbody>
+                        </table>
+                        </div>
+                    `;
+                    container.appendChild(sectionDiv);
+                    
+                    const tbody = document.getElementById(`responsible-${party.replace(' ', '-')}`);
+                    tasksForParty.forEach(item => {
+                        const task = item.task;
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td style="text-align: center;">
+                                <input type="checkbox" class="gantt-checkbox" ${task.showInGantt ? 'checked' : ''} disabled>
+                            </td>
+                            <td>${item.sectionName}</td>
+                            <td>${task.name}</td>
+                            <td>${task.description || ''}</td>
+                            <td>
+                                <span class="status-select status-${task.status}" style="display: inline-block; padding: 4px 8px;">
+                                    ${task.status === 'on-track' ? 'On Track' : task.status === 'off-track' ? 'Off Track' : task.status === 'stuck' ? 'Stuck' : 'N/A'}
+                                </span>
+                            </td>
+                            <td>${formatDateDisplay(task.startDate)}</td>
+                            <td>${formatDateDisplay(task.dueDate)}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+            });
+        }
+        
+        function renderDoneTasks() {
+            const container = document.getElementById('doneTasks');
+            container.innerHTML = '';
+            
+            const doneTasks = [];
+            sections.forEach((section, sectionIndex) => {
+                section.tasks.forEach((task, taskIndex) => {
+                    if (task.status === 'done') {
+                        doneTasks.push({
+                            task: task,
+                            sectionIndex: sectionIndex,
+                            taskIndex: taskIndex,
+                            sectionName: section.name
+                        });
+                    }
+                });
+            });
+            
+            if (doneTasks.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 20px; color: #5f6368; font-size: 11px;">No completed tasks yet</div>';
+                return;
+            }
+            
+            const sectionDiv = document.createElement('div');
+            sectionDiv.innerHTML = `
+                <div class="task-section-header" style="background: #C8E6C9; display: flex; align-items: center; gap: 10px;" onclick="toggleSection('done-content')">
+                    <span class="collapse-icon" id="icon-done-content" style="font-size: 16px; font-weight: bold; color: #5f6368;">▼</span>
+                    <span style="font-weight: 600; color: #388E3C; font-size: 12px;">Completed (${doneTasks.length})</span>
+                </div>
+                <div id="content-done-content" style="display: block;">
+                <table class="task-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 13%">Section</th>
+                            <th style="width: 18%">Task Name</th>
+                            <th style="width: 20%">Description</th>
+                            <th style="width: 11%">Responsibility</th>
+                            <th style="width: 10%">Start Date</th>
+                            <th style="width: 10%">Due Date</th>
+                            <th style="width: 10%">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="done-tasks-body">
+                    </tbody>
+                </table>
+                </div>
+            `;
+            container.appendChild(sectionDiv);
+            
+            const tbody = document.getElementById('done-tasks-body');
+            doneTasks.forEach(item => {
+                const task = item.task;
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.sectionName}</td>
+                    <td>${task.name}</td>
+                    <td>${task.description || ''}</td>
+                    <td>
+                        <span class="responsible-select responsible-${task.responsible === 'Scale' ? 'scale' : task.responsible === 'Client' ? 'client' : task.responsible === 'Third Party' ? 'third-party' : 'none'}" style="display: inline-block; padding: 4px 8px;">
+                            ${task.responsible || 'N/A'}
+                        </span>
+                    </td>
+                    <td>${formatDateDisplay(task.startDate)}</td>
+                    <td>${formatDateDisplay(task.dueDate)}</td>
+                    <td>
+                        <button class="add-task-btn" onclick="reopenTask(${item.sectionIndex}, ${item.taskIndex})" style="padding: 3px 8px; font-size: 9px; margin-right: 4px;">Reopen</button>
+                        <button class="delete-btn" onclick="deleteTask(${item.sectionIndex}, ${item.taskIndex})">Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+        
+        function renderGantt() {
+            const container = document.getElementById('ganttChart');
+            
+            const ganttTasks = [];
+            sections.forEach(section => {
+                section.tasks.forEach(task => {
+                    if (task.showInGantt && task.startDate && task.dueDate) {
+                        ganttTasks.push(task);
+                    }
+                });
+            });
+            
+            if (ganttTasks.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 40px; color: #5f6368;">Select tasks to display on the Gantt chart by checking the "Gantt" checkbox next to each task.</div>';
+                document.getElementById('ganttStartDate').value = '';
+                document.getElementById('ganttEndDate').value = '';
+                return;
+            }
+            
+            function parseLocalDate(dateString) {
+                const [year, month, day] = dateString.split('-').map(Number);
+                return new Date(year, month - 1, day);
+            }
+            
+            let earliestStart = parseLocalDate(ganttTasks[0].startDate);
+            let latestEnd = parseLocalDate(ganttTasks[0].dueDate);
+            
+            ganttTasks.forEach(task => {
+                const taskStart = parseLocalDate(task.startDate);
+                const taskEnd = parseLocalDate(task.dueDate);
+                if (taskStart < earliestStart) earliestStart = taskStart;
+                if (taskEnd > latestEnd) latestEnd = taskEnd;
+            });
+            
+            function getMonday(date) {
+                const d = new Date(date);
+                const day = d.getDay();
+                const diff = day === 0 ? -6 : 1 - day;
+                d.setDate(d.getDate() + diff);
+                return d;
+            }
+            
+            function getSunday(date) {
+                const d = new Date(date);
+                const day = d.getDay();
+                const diff = day === 0 ? 0 : 7 - day;
+                d.setDate(d.getDate() + diff);
+                return d;
+            }
+            
+            const startMonday = getMonday(earliestStart);
+            const endSunday = getSunday(latestEnd);
+            
+            const millisecondsPerDay = 1000 * 60 * 60 * 24;
+            const totalDays = Math.round((endSunday - startMonday) / millisecondsPerDay) + 1;
+            const weeks = Math.ceil(totalDays / 7);
+            
+            let html = '<div class="gantt-header-row">';
+            html += '<div class="gantt-header-label">Task Name</div>';
+            html += '<div class="gantt-timeline">';
+            for (let i = 0; i < weeks; i++) {
+                const weekStart = new Date(startMonday);
+                weekStart.setDate(startMonday.getDate() + (i * 7));
+                const monthStr = weekStart.toLocaleDateString('en-US', {month: 'short'});
+                const dayStr = weekStart.getDate();
+                html += `<div class="gantt-date">Week ${i + 1}<br>${monthStr} ${dayStr}</div>`;
+            }
+            html += '</div></div>';
+            
+            ganttTasks.forEach(task => {
+                const taskStart = parseLocalDate(task.startDate);
+                const taskEnd = parseLocalDate(task.dueDate);
+                
+                const daysFromStart = Math.round((taskStart - startMonday) / millisecondsPerDay);
+                const taskDuration = Math.round((taskEnd - taskStart) / millisecondsPerDay) + 1;
+                
+                const leftPercent = (daysFromStart / totalDays) * 100;
+                const widthPercent = (taskDuration / totalDays) * 100;
+                
+                const startMonth = (taskStart.getMonth() + 1).toString().padStart(2, '0');
+                const startDay = taskStart.getDate().toString().padStart(2, '0');
+                const startYear = taskStart.getFullYear();
+                const endMonth = (taskEnd.getMonth() + 1).toString().padStart(2, '0');
+                const endDay = taskEnd.getDate().toString().padStart(2, '0');
+                const endYear = taskEnd.getFullYear();
+                
+                const startDateStr = `${startMonth}/${startDay}/${startYear}`;
+                const endDateStr = `${endMonth}/${endDay}/${endYear}`;
+                
+                const responsibilityClass = task.responsible === 'Scale' ? 'scale' : 
+                                            task.responsible === 'Client' ? 'client' : 
+                                            task.responsible === 'Third Party' ? 'third-party' : 'none';
+                
+                html += `
+                    <div class="gantt-row">
+                        <div class="gantt-task-name">${task.name}</div>
+                        <div class="gantt-bars-container" style="--weeks: ${weeks}">
+                            <div class="gantt-bar ${responsibilityClass}" 
+                                 style="left: ${leftPercent}%; width: ${widthPercent}%; min-width: 60px;">
+                                ${startDateStr} - ${endDateStr}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            
+            const formatDateForInput = (date) => {
+                const year = date.getFullYear();
+                const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                const day = date.getDate().toString().padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            };
+            
+            document.getElementById('ganttStartDate').value = formatDateForInput(startMonday);
+            document.getElementById('ganttEndDate').value = formatDateForInput(endSunday);
+        }
+        
+        function toggleGantt(sectionIndex, taskIndex, show) {
+            sections[sectionIndex].tasks[taskIndex].showInGantt = show;
+            saveData();
+            renderGantt();
+            renderTasksByResponsible();
+            renderDoneTasks();
+        }
+        
+        function updateSectionName(sectionIndex, value) {
+            sections[sectionIndex].name = value;
+            saveData();
+        }
+        
+        function updateTask(sectionIndex, taskIndex, field, value) {
+            sections[sectionIndex].tasks[taskIndex][field] = value;
+            saveData();
+            renderSections();
+            renderTasksByResponsible();
+            renderDoneTasks();
+            renderGantt();
+        }
+        
+        function addSection() {
+            const name = prompt('Enter section name:');
+            if (name) {
+                sections.push({
+                    name: name,
+                    tasks: []
+                });
+                saveData();
+                renderSections();
+            }
+        }
+        
+        function deleteSection(sectionIndex) {
+            if (confirm('Delete this section and all its tasks?')) {
+                sections.splice(sectionIndex, 1);
+                saveData();
+                renderSections();
+                renderTasksByResponsible();
+                renderDoneTasks();
+                renderGantt();
+            }
+        }
+        
+        function addTask(sectionIndex) {
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0];
+            
+            sections[sectionIndex].tasks.push({
+                name: "New Task",
+                responsible: "",
+                status: "on-track",
+                startDate: todayStr,
+                dueDate: todayStr,
+                description: "",
+                showInGantt: false
+            });
+            saveData();
+            renderSections();
+            renderTasksByResponsible();
+            renderDoneTasks();
+        }
+        
+        function deleteTask(sectionIndex, taskIndex) {
+            if (confirm('Are you sure you want to delete this task?')) {
+                sections[sectionIndex].tasks.splice(taskIndex, 1);
+                saveData();
+                renderSections();
+                renderTasksByResponsible();
+                renderDoneTasks();
+                renderGantt();
+            }
+        }
+        
+        function clearAllData() {
+            document.getElementById('clearModal').classList.add('show');
+        }
+        
+        function closeModal() {
+            document.getElementById('clearModal').classList.remove('show');
+        }
+        
+        function confirmClear() {
+            sections = getDefaultSections();
+            document.getElementById('clientName').value = '';
+            document.getElementById('goLiveDate').value = '';
+            document.getElementById('documentTitle').value = 'Client Onboarding Status';
+            renderSections();
+            renderTasksByResponsible();
+            renderDoneTasks();
+            renderGantt();
+            saveData();
+            closeModal();
+        }
+        
+        function updateProgress() {
+            let onTrack = 0, offTrack = 0, stuck = 0, done = 0;
+            let scaleCount = 0, clientCount = 0, thirdPartyCount = 0;
+            
+            sections.forEach(section => {
+                section.tasks.forEach(task => {
+                    if (task.status === 'on-track') onTrack++;
+                    else if (task.status === 'off-track') offTrack++;
+                    else if (task.status === 'stuck') stuck++;
+                    else if (task.status === 'done') done++;
+                    
+                    if (task.responsible === 'Scale' && task.status !== 'done') scaleCount++;
+                    else if (task.responsible === 'Client' && task.status !== 'done') clientCount++;
+                    else if (task.responsible === 'Third Party' && task.status !== 'done') thirdPartyCount++;
+                });
+            });
+            
+            document.getElementById('onTrackCount').textContent = onTrack;
+            document.getElementById('offTrackCount').textContent = offTrack;
+            document.getElementById('stuckCount').textContent = stuck;
+            document.getElementById('doneCount').textContent = done;
+            
+            document.getElementById('scaleCount').textContent = scaleCount;
+            document.getElementById('clientCount').textContent = clientCount;
+            document.getElementById('thirdPartyCount').textContent = thirdPartyCount;
+        }
+        
+        function toggleSection(contentId) {
+            const content = document.getElementById(`content-${contentId}`);
+            const icon = document.getElementById(`icon-${contentId}`);
+            
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                icon.textContent = '▼';
+            } else {
+                content.style.display = 'none';
+                icon.textContent = '▶';
+            }
+        }
+        
+        function downloadNewClientVersion() {
+            // Generate a new unique ID for this download
+            const newFileId = 'file-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+            
+            // Get current HTML
+            let htmlContent = document.documentElement.outerHTML;
+            
+            // Inject the new file ID into the HTML
+            // Look for the FILE_ID line and replace it with the new ID
+            htmlContent = htmlContent.replace(
+                /const FILE_ID = \(function\(\) \{[\s\S]*?\}\)\(\);/,
+                `const FILE_ID = '${newFileId}';`
+            );
+            
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            
+            const today = new Date();
+            const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+            a.download = `Client-Onboarding-Tracker-${dateStr}.html`;
+            
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            alert('✅ New template downloaded! This copy has a unique ID and will have completely separate data storage from all other copies.');
+        }
+        
+        loadData();
+    </script>
+
+
+</body></html>
