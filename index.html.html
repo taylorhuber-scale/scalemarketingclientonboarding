@@ -1,4 +1,6 @@
-<html lang="en"><head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Client Onboarding Status Tracker</title>
@@ -59,11 +61,59 @@
             color: #ea8600;
         }
         
+        .save-indicator.error {
+            background: #fce8e6;
+            color: #c5221f;
+        }
+        
         .header-info {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 15px;
             margin-top: 15px;
+        }
+        
+        .info-field {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .info-field label {
+            font-size: 10px;
+            color: #5f6368;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+        
+        .info-field input {
+            padding: 6px;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .firebase-setup {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+        
+        .firebase-setup h3 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+        
+        .firebase-setup p {
+            color: #856404;
+            font-size: 11px;
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+        
+        .firebase-setup strong {
+            color: #000;
         }
         
         .section {
@@ -102,18 +152,6 @@
             padding: 10px;
             border-radius: 8px;
             text-align: center;
-        }
-        
-        .progress-card.on-track {
-            background: #e6f4ea;
-        }
-        
-        .progress-card.off-track {
-            background: #fce8e6;
-        }
-        
-        .progress-card.stuck {
-            background: #fef7e0;
         }
         
         .progress-card .number {
@@ -201,7 +239,6 @@
             align-items: center;
             margin-bottom: 6px;
             min-height: 32px;
-            position: relative;
         }
         
         .gantt-task-name {
@@ -236,8 +273,6 @@
             font-size: 9px;
             color: white;
             font-weight: 600;
-            cursor: move;
-            position: relative;
         }
         
         .gantt-bar.scale {
@@ -260,11 +295,12 @@
             background: #f1f3f4;
             padding: 8px;
             font-weight: 600;
-            color: #FF9800;
+            color: #202124;
             margin-top: 15px;
             border-radius: 4px;
             font-size: 12px;
             cursor: pointer;
+            user-select: none;
         }
         
         .task-section-header:hover {
@@ -274,7 +310,6 @@
         .collapse-icon {
             font-size: 16px;
             color: #5f6368;
-            user-select: none;
             font-weight: bold;
             min-width: 20px;
             display: inline-block;
@@ -504,9 +539,19 @@
 </head>
 <body>
     <div class="container" id="mainContainer">
-        <div class="loading" id="loadingIndicator" style="display: none;">Loading your data...</div>
+        <div class="loading" id="loadingIndicator">Connecting to Firebase...</div>
         
-        <div id="appContent" style="display: block;">
+        <div id="appContent" style="display: none;">
+            <!-- Firebase Setup Instructions (will hide once configured) -->
+            <div class="firebase-setup" id="firebaseSetup" style="display: none;">
+                <h3>🔧 Firebase Setup Required</h3>
+                <p><strong>Step 1:</strong> Go to <a href="https://console.firebase.google.com" target="_blank">Firebase Console</a> and create a new project</p>
+                <p><strong>Step 2:</strong> In your project, click "Web" (</>) to add a web app</p>
+                <p><strong>Step 3:</strong> Copy your Firebase config and paste it in the <code>firebaseConfig</code> section at the bottom of this HTML file</p>
+                <p><strong>Step 4:</strong> In Firebase Console, go to "Build" → "Realtime Database" → "Create Database" (start in test mode)</p>
+                <p><strong>Step 5:</strong> Refresh this page</p>
+            </div>
+            
             <div class="header">
                 <input type="text" id="documentTitle" value="Client Onboarding Status" style="font-size: 22px; font-weight: bold; color: #202124; border: none; background: transparent; width: 100%; padding: 5px; font-family: 'Arial', sans-serif;" onchange="saveData()">
                 <div class="save-indicator" id="saveIndicator">Ready</div>
@@ -529,9 +574,9 @@
                 </h2>
                 <div id="content-progress-overview">
                 <div style="margin-bottom: 10px; font-weight: 600; color: #FF9800; font-size: 12px;">By Status</div>
-                <div class="progress-overview" style="display: flex; flex-wrap: nowrap;">
+                <div style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: nowrap;">
                     <div class="progress-card" style="background: #BBDEFB; flex: 1;">
-                        <div class="number" id="onTrackCount" style="color: #1976D2;">2</div>
+                        <div class="number" id="onTrackCount" style="color: #1976D2;">0</div>
                         <div class="label">On Track</div>
                     </div>
                     <div class="progress-card" style="background: #FFE0B2; flex: 1;">
@@ -539,7 +584,7 @@
                         <div class="label">Off Track</div>
                     </div>
                     <div class="progress-card" style="background: #FFCCBC; flex: 1;">
-                        <div class="number" id="stuckCount" style="color: #E64A19;">1</div>
+                        <div class="number" id="stuckCount" style="color: #E64A19;">0</div>
                         <div class="label">Stuck</div>
                     </div>
                     <div class="progress-card" style="background: #C8E6C9; flex: 1;">
@@ -551,15 +596,15 @@
                 <div style="margin-bottom: 10px; margin-top: 20px; font-weight: 600; color: #FF9800; font-size: 12px;">By Responsibility</div>
                 <div style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: nowrap;">
                     <div class="progress-card" style="background: #BBDEFB; flex: 1;">
-                        <div class="number" id="scaleCount" style="color: #1976D2;">1</div>
+                        <div class="number" id="scaleCount" style="color: #1976D2;">0</div>
                         <div class="label">Scale</div>
                     </div>
                     <div class="progress-card" style="background: #fff3e0; flex: 1;">
-                        <div class="number" id="clientCount" style="color: #f57c00;">1</div>
+                        <div class="number" id="clientCount" style="color: #f57c00;">0</div>
                         <div class="label">Client</div>
                     </div>
                     <div class="progress-card" style="background: #f3e5f5; flex: 1;">
-                        <div class="number" id="thirdPartyCount" style="color: #7b1fa2;">1</div>
+                        <div class="number" id="thirdPartyCount" style="color: #7b1fa2;">0</div>
                         <div class="label">Third Party</div>
                     </div>
                 </div>
@@ -569,137 +614,10 @@
             <div class="section">
                 <h2 class="section-title" onclick="toggleSection('task-list')">
                     <span class="collapse-icon" id="icon-task-list">▼</span>
-                    Task List &amp; Status
+                    Task List & Status
                 </h2>
                 <div id="content-task-list">
-                <div id="taskSections"><div>
-                    <div class="task-section-header">
-                        <input type="text" value="Discovery &amp; Planning" onchange="updateSectionName(0, this.value)" style="background: transparent; border: none; font-weight: 600; color: #202124; font-size: 14px; width: 80%;">
-                        <button class="delete-btn" onclick="deleteSection(0)" style="float: right;">Delete Section</button>
-                    </div>
-                    <table class="task-table">
-                        <thead>
-                            <tr>
-                                <th style="width: 4%">Gantt</th>
-                                <th style="width: 20%">Task Name</th>
-                                <th style="width: 25%">Description</th>
-                                <th style="width: 13%">Responsibility</th>
-                                <th style="width: 10%">Status</th>
-                                <th style="width: 9%">Start Date</th>
-                                <th style="width: 9%">Due Date</th>
-                                <th style="width: 6%">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="section-0">
-                        <tr>
-                        <td style="text-align: center;">
-                            <input type="checkbox" class="gantt-checkbox" checked="" onchange="toggleGantt(0, 0, this.checked)">
-                        </td>
-                        <td><input type="text" value="Initial kickoff meeting" onchange="updateTask(0, 0, 'name', this.value)"></td>
-                        <td><input type="text" value="Align on project goals and timeline" placeholder="Add description..." onchange="updateTask(0, 0, 'description', this.value)"></td>
-                        <td>
-                            <select class="responsible-select responsible-scale" onchange="updateTask(0, 0, 'responsible', this.value)">
-                                <option value="">Select...</option>
-                                <option value="Scale" selected="">Scale</option>
-                                <option value="Client">Client</option>
-                                <option value="Third Party">Third Party</option>
-                                <option value="N/A">N/A</option>
-                            </select>
-                        </td>
-                        <td>
-                            <select class="status-select status-on-track" onchange="updateTask(0, 0, 'status', this.value)">
-                                <option value="on-track" selected="">On Track</option>
-                                <option value="off-track">Off Track</option>
-                                <option value="stuck">Stuck</option>
-                                <option value="done">Done</option>
-                                <option value="n-a">N/A</option>
-                            </select>
-                        </td>
-                        <td><input type="date" value="2025-01-15" onblur="updateTask(0, 0, 'startDate', this.value)" onfocus="this.showPicker()"></td>
-                        <td><input type="date" value="2025-01-20" onblur="updateTask(0, 0, 'dueDate', this.value)" onfocus="this.showPicker()"></td>
-                        <td><button class="delete-btn" onclick="deleteTask(0, 0)">Delete</button></td>
-                    </tr><tr>
-                        <td style="text-align: center;">
-                            <input type="checkbox" class="gantt-checkbox" checked="" onchange="toggleGantt(0, 1, this.checked)">
-                        </td>
-                        <td><input type="text" value="Requirements gathering" onchange="updateTask(0, 1, 'name', this.value)"></td>
-                        <td><input type="text" value="Document all business requirements" placeholder="Add description..." onchange="updateTask(0, 1, 'description', this.value)"></td>
-                        <td>
-                            <select class="responsible-select responsible-client" onchange="updateTask(0, 1, 'responsible', this.value)">
-                                <option value="">Select...</option>
-                                <option value="Scale">Scale</option>
-                                <option value="Client" selected="">Client</option>
-                                <option value="Third Party">Third Party</option>
-                                <option value="N/A">N/A</option>
-                            </select>
-                        </td>
-                        <td>
-                            <select class="status-select status-on-track" onchange="updateTask(0, 1, 'status', this.value)">
-                                <option value="on-track" selected="">On Track</option>
-                                <option value="off-track">Off Track</option>
-                                <option value="stuck">Stuck</option>
-                                <option value="done">Done</option>
-                                <option value="n-a">N/A</option>
-                            </select>
-                        </td>
-                        <td><input type="date" value="2025-01-21" onblur="updateTask(0, 1, 'startDate', this.value)" onfocus="this.showPicker()"></td>
-                        <td><input type="date" value="2025-02-05" onblur="updateTask(0, 1, 'dueDate', this.value)" onfocus="this.showPicker()"></td>
-                        <td><button class="delete-btn" onclick="deleteTask(0, 1)">Delete</button></td>
-                    </tr></tbody>
-                    </table>
-                    <button class="add-task-btn" onclick="addTask(0)" style="margin-top: 8px;">+ Add Task</button>
-                    
-                </div><div>
-                    <div class="task-section-header">
-                        <input type="text" value="Implementation" onchange="updateSectionName(1, this.value)" style="background: transparent; border: none; font-weight: 600; color: #202124; font-size: 14px; width: 80%;">
-                        <button class="delete-btn" onclick="deleteSection(1)" style="float: right;">Delete Section</button>
-                    </div>
-                    <table class="task-table">
-                        <thead>
-                            <tr>
-                                <th style="width: 4%">Gantt</th>
-                                <th style="width: 20%">Task Name</th>
-                                <th style="width: 25%">Description</th>
-                                <th style="width: 13%">Responsibility</th>
-                                <th style="width: 10%">Status</th>
-                                <th style="width: 9%">Start Date</th>
-                                <th style="width: 9%">Due Date</th>
-                                <th style="width: 6%">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="section-1">
-                        <tr>
-                        <td style="text-align: center;">
-                            <input type="checkbox" class="gantt-checkbox" checked="" onchange="toggleGantt(1, 0, this.checked)">
-                        </td>
-                        <td><input type="text" value="System configuration" onchange="updateTask(1, 0, 'name', this.value)"></td>
-                        <td><input type="text" value="Waiting on vendor access" placeholder="Add description..." onchange="updateTask(1, 0, 'description', this.value)"></td>
-                        <td>
-                            <select class="responsible-select responsible-third-party" onchange="updateTask(1, 0, 'responsible', this.value)">
-                                <option value="">Select...</option>
-                                <option value="Scale">Scale</option>
-                                <option value="Client">Client</option>
-                                <option value="Third Party" selected="">Third Party</option>
-                                <option value="N/A">N/A</option>
-                            </select>
-                        </td>
-                        <td>
-                            <select class="status-select status-stuck" onchange="updateTask(1, 0, 'status', this.value)">
-                                <option value="on-track">On Track</option>
-                                <option value="off-track">Off Track</option>
-                                <option value="stuck" selected="">Stuck</option>
-                                <option value="done">Done</option>
-                                <option value="n-a">N/A</option>
-                            </select>
-                        </td>
-                        <td><input type="date" value="2025-02-06" onblur="updateTask(1, 0, 'startDate', this.value)" onfocus="this.showPicker()"></td>
-                        <td><input type="date" value="2025-02-25" onblur="updateTask(1, 0, 'dueDate', this.value)" onfocus="this.showPicker()"></td>
-                        <td><button class="delete-btn" onclick="deleteTask(1, 0)">Delete</button></td>
-                    </tr></tbody>
-                    </table>
-                    <button class="add-task-btn" onclick="addTask(1)" style="margin-top: 8px;">+ Add Task</button>
-                    
-                </div></div>
+                <div id="taskSections"></div>
                 <div class="button-group">
                     <button class="add-section-btn" onclick="addSection()">+ Add Section</button>
                     <button class="clear-btn" onclick="clearAllData()">Clear All Data</button>
@@ -717,39 +635,12 @@
                     <div class="gantt-header">
                         <div style="font-weight: 600; color: #202124;">Project Timeline (Auto-calculated from selected tasks)</div>
                         <div class="gantt-controls">
-                            <input type="date" id="ganttStartDate" readonly="" style="background: #f1f3f4;">
+                            <input type="date" id="ganttStartDate" readonly style="background: #f1f3f4;">
                             <span style="padding: 6px;">to</span>
-                            <input type="date" id="ganttEndDate" readonly="" style="background: #f1f3f4;">
+                            <input type="date" id="ganttEndDate" readonly style="background: #f1f3f4;">
                         </div>
                     </div>
-                    <div id="ganttChart" class="gantt-chart"><div class="gantt-header-row"><div class="gantt-header-label">Task Name</div><div class="gantt-timeline"><div class="gantt-date">Week 1<br>Jan 13</div><div class="gantt-date">Week 2<br>Jan 20</div><div class="gantt-date">Week 3<br>Jan 27</div><div class="gantt-date">Week 4<br>Feb 3</div><div class="gantt-date">Week 5<br>Feb 10</div><div class="gantt-date">Week 6<br>Feb 17</div><div class="gantt-date">Week 7<br>Feb 24</div></div></div>
-                    <div class="gantt-row">
-                        <div class="gantt-task-name">Initial kickoff meeting</div>
-                        <div class="gantt-bars-container" style="--weeks: 7">
-                            <div class="gantt-bar scale" style="left: 4.081632653061225%; width: 12.244897959183673%; min-width: 60px;">
-                                01/15/2025 - 01/20/2025
-                            </div>
-                        </div>
-                    </div>
-                
-                    <div class="gantt-row">
-                        <div class="gantt-task-name">Requirements gathering</div>
-                        <div class="gantt-bars-container" style="--weeks: 7">
-                            <div class="gantt-bar client" style="left: 16.3265306122449%; width: 32.6530612244898%; min-width: 60px;">
-                                01/21/2025 - 02/05/2025
-                            </div>
-                        </div>
-                    </div>
-                
-                    <div class="gantt-row">
-                        <div class="gantt-task-name">System configuration</div>
-                        <div class="gantt-bars-container" style="--weeks: 7">
-                            <div class="gantt-bar third-party" style="left: 48.97959183673469%; width: 40.816326530612244%; min-width: 60px;">
-                                02/06/2025 - 02/25/2025
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                    <div id="ganttChart" class="gantt-chart"></div>
                 </div>
                 </div>
             </div>
@@ -760,115 +651,7 @@
                     Tasks by Responsibility
                 </h2>
                 <div id="content-tasks-by-responsibility">
-                <div id="tasksByResponsible"><div>
-                        <div class="task-section-header" style="background: #e8eaf6; display: flex; align-items: center; gap: 10px;" onclick="toggleSection('responsible-content-Scale')">
-                            <span class="collapse-icon" id="icon-responsible-content-Scale" style="font-size: 16px; font-weight: bold; color: #5f6368;">▼</span>
-                            <span style="font-weight: 600; color: #1976D2; font-size: 12px;">Scale Tasks (1)</span>
-                        </div>
-                        <div id="content-responsible-content-Scale" style="display: block;">
-                        <table class="task-table">
-                            <thead>
-                                <tr>
-                                    <th style="width: 4%">Gantt</th>
-                                    <th style="width: 15%">Section</th>
-                                    <th style="width: 18%">Task Name</th>
-                                    <th style="width: 20%">Description</th>
-                                    <th style="width: 10%">Status</th>
-                                    <th style="width: 11%">Start Date</th>
-                                    <th style="width: 11%">Due Date</th>
-                                </tr>
-                            </thead>
-                            <tbody id="responsible-Scale">
-                            <tr>
-                            <td style="text-align: center;">
-                                <input type="checkbox" class="gantt-checkbox" checked="" disabled="">
-                            </td>
-                            <td>Discovery &amp; Planning</td>
-                            <td>Initial kickoff meeting</td>
-                            <td>Align on project goals and timeline</td>
-                            <td>
-                                <span class="status-select status-on-track" style="display: inline-block; padding: 4px 8px;">
-                                    On Track
-                                </span>
-                            </td>
-                            <td>01-15-2025</td>
-                            <td>01-20-2025</td>
-                        </tr></tbody>
-                        </table>
-                        </div>
-                    </div><div>
-                        <div class="task-section-header" style="background: #fff3e0; display: flex; align-items: center; gap: 10px;" onclick="toggleSection('responsible-content-Client')">
-                            <span class="collapse-icon" id="icon-responsible-content-Client" style="font-size: 16px; font-weight: bold; color: #5f6368;">▼</span>
-                            <span style="font-weight: 600; color: #F57C00; font-size: 12px;">Client Tasks (1)</span>
-                        </div>
-                        <div id="content-responsible-content-Client" style="display: block;">
-                        <table class="task-table">
-                            <thead>
-                                <tr>
-                                    <th style="width: 4%">Gantt</th>
-                                    <th style="width: 15%">Section</th>
-                                    <th style="width: 18%">Task Name</th>
-                                    <th style="width: 20%">Description</th>
-                                    <th style="width: 10%">Status</th>
-                                    <th style="width: 11%">Start Date</th>
-                                    <th style="width: 11%">Due Date</th>
-                                </tr>
-                            </thead>
-                            <tbody id="responsible-Client">
-                            <tr>
-                            <td style="text-align: center;">
-                                <input type="checkbox" class="gantt-checkbox" checked="" disabled="">
-                            </td>
-                            <td>Discovery &amp; Planning</td>
-                            <td>Requirements gathering</td>
-                            <td>Document all business requirements</td>
-                            <td>
-                                <span class="status-select status-on-track" style="display: inline-block; padding: 4px 8px;">
-                                    On Track
-                                </span>
-                            </td>
-                            <td>01-21-2025</td>
-                            <td>02-05-2025</td>
-                        </tr></tbody>
-                        </table>
-                        </div>
-                    </div><div>
-                        <div class="task-section-header" style="background: #f3e5f5; display: flex; align-items: center; gap: 10px;" onclick="toggleSection('responsible-content-Third-Party')">
-                            <span class="collapse-icon" id="icon-responsible-content-Third-Party" style="font-size: 16px; font-weight: bold; color: #5f6368;">▼</span>
-                            <span style="font-weight: 600; color: #7b1fa2; font-size: 12px;">Third Party Tasks (1)</span>
-                        </div>
-                        <div id="content-responsible-content-Third-Party" style="display: block;">
-                        <table class="task-table">
-                            <thead>
-                                <tr>
-                                    <th style="width: 4%">Gantt</th>
-                                    <th style="width: 15%">Section</th>
-                                    <th style="width: 18%">Task Name</th>
-                                    <th style="width: 20%">Description</th>
-                                    <th style="width: 10%">Status</th>
-                                    <th style="width: 11%">Start Date</th>
-                                    <th style="width: 11%">Due Date</th>
-                                </tr>
-                            </thead>
-                            <tbody id="responsible-Third-Party">
-                            <tr>
-                            <td style="text-align: center;">
-                                <input type="checkbox" class="gantt-checkbox" checked="" disabled="">
-                            </td>
-                            <td>Implementation</td>
-                            <td>System configuration</td>
-                            <td>Waiting on vendor access</td>
-                            <td>
-                                <span class="status-select status-stuck" style="display: inline-block; padding: 4px 8px;">
-                                    Stuck
-                                </span>
-                            </td>
-                            <td>02-06-2025</td>
-                            <td>02-25-2025</td>
-                        </tr></tbody>
-                        </table>
-                        </div>
-                    </div></div>
+                <div id="tasksByResponsible"></div>
                 </div>
             </div>
             
@@ -878,22 +661,15 @@
                     Completed Tasks
                 </h2>
                 <div id="content-completed-tasks">
-                <div id="doneTasks"><div style="text-align: center; padding: 20px; color: #5f6368; font-size: 11px;">No completed tasks yet</div></div>
+                <div id="doneTasks"></div>
                 </div>
-            </div>
-            
-            <div style="text-align: center; padding: 20px; border-top: 1px solid #E0E0E0; margin-top: 20px;">
-                <button onclick="downloadNewClientVersion()" style="background: #4CAF50; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600;">
-                    📥 Download New Template Copy
-                </button>
-                <div style="font-size: 10px; color: #5f6368; margin-top: 8px;">Creates a fresh template. Each downloaded file has its own independent data storage.</div>
             </div>
         </div>
         
         <div class="modal" id="clearModal">
             <div class="modal-content">
                 <h3>Clear All Data?</h3>
-                <p>Are you sure you want to clear all data for this client? This cannot be undone.</p>
+                <p>Are you sure you want to clear all data? This cannot be undone.</p>
                 <div class="modal-buttons">
                     <button class="modal-btn cancel" onclick="closeModal()">Cancel</button>
                     <button class="modal-btn confirm" onclick="confirmClear()">Clear All</button>
@@ -902,7 +678,37 @@
         </div>
     </div>
     
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
     <script>
+        // 🔥 FIREBASE CONFIGURATION
+        // Replace this with your Firebase config from Firebase Console
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY_HERE",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        
+        // Initialize Firebase
+        let database;
+        let isFirebaseConfigured = false;
+        
+        try {
+            if (firebaseConfig.apiKey !== "YOUR_API_KEY_HERE") {
+                firebase.initializeApp(firebaseConfig);
+                database = firebase.database();
+                isFirebaseConfigured = true;
+            }
+        } catch (error) {
+            console.error("Firebase initialization error:", error);
+        }
+        
         window.reopenTask = function(sectionIndex, taskIndex) {
             sections[sectionIndex].tasks[taskIndex].status = 'on-track';
             saveData();
@@ -917,7 +723,7 @@
             if (!isoDate || isoDate === '') return '';
             const parts = isoDate.split('-');
             if (parts.length === 3) {
-                return `${parts[1]}-${parts[2]}-${parts[0]}`;
+                return `${parts[1]}/${parts[2]}/${parts[0]}`;
             }
             return isoDate;
         }
@@ -925,18 +731,14 @@
         let sections = [];
         let saveTimeout;
         
-        // Generate or retrieve unique file ID - this makes each downloaded file independent
-        const FILE_ID = 'file-1766094126541-opbq9v3fi';
-        
-        const STORAGE_KEY = 'onboarding-' + FILE_ID;
-        
         async function loadData() {
             try {
-                if (window.storage && typeof window.storage.get === 'function') {
-                    const result = await window.storage.get('onboarding-data', false);
+                if (isFirebaseConfigured) {
+                    // Load from Firebase
+                    const snapshot = await database.ref('onboarding-data').once('value');
+                    const data = snapshot.val();
                     
-                    if (result && result.value) {
-                        const data = JSON.parse(result.value);
+                    if (data) {
                         sections = data.sections || getDefaultSections();
                         document.getElementById('clientName').value = data.clientName || '';
                         document.getElementById('goLiveDate').value = data.goLiveDate || '';
@@ -944,20 +746,14 @@
                     } else {
                         sections = getDefaultSections();
                     }
+                    document.getElementById('firebaseSetup').style.display = 'none';
                 } else {
-                    const storedData = localStorage.getItem(STORAGE_KEY);
-                    if (storedData) {
-                        const data = JSON.parse(storedData);
-                        sections = data.sections || getDefaultSections();
-                        document.getElementById('clientName').value = data.clientName || '';
-                        document.getElementById('goLiveDate').value = data.goLiveDate || '';
-                        document.getElementById('documentTitle').value = data.documentTitle || 'Client Onboarding Status';
-                    } else {
-                        sections = getDefaultSections();
-                    }
+                    // Show setup instructions
+                    document.getElementById('firebaseSetup').style.display = 'block';
+                    sections = getDefaultSections();
                 }
             } catch (error) {
-                console.log('Loading from storage, using defaults:', error);
+                console.error('Load error:', error);
                 sections = getDefaultSections();
             }
             
@@ -1026,19 +822,18 @@
                         documentTitle: document.getElementById('documentTitle').value
                     };
                     
-                    if (window.storage && typeof window.storage.set === 'function') {
-                        await window.storage.set('onboarding-data', JSON.stringify(data), false);
+                    if (isFirebaseConfigured) {
+                        await database.ref('onboarding-data').set(data);
                         indicator.textContent = 'Synced ☁️';
+                        indicator.className = 'save-indicator';
                     } else {
-                        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-                        indicator.textContent = 'Saved ✓';
+                        indicator.textContent = 'Configure Firebase';
+                        indicator.className = 'save-indicator error';
                     }
-                    indicator.className = 'save-indicator';
                 } catch (error) {
                     console.error('Save error:', error);
                     indicator.textContent = 'Error saving';
-                    indicator.style.background = '#fce8e6';
-                    indicator.style.color = '#c5221f';
+                    indicator.className = 'save-indicator error';
                 }
             }, 500);
         }
@@ -1531,39 +1326,7 @@
             }
         }
         
-        function downloadNewClientVersion() {
-            // Generate a new unique ID for this download
-            const newFileId = 'file-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-            
-            // Get current HTML
-            let htmlContent = document.documentElement.outerHTML;
-            
-            // Inject the new file ID into the HTML
-            // Look for the FILE_ID line and replace it with the new ID
-            htmlContent = htmlContent.replace(
-                /const FILE_ID = \(function\(\) \{[\s\S]*?\}\)\(\);/,
-                `const FILE_ID = '${newFileId}';`
-            );
-            
-            const blob = new Blob([htmlContent], { type: 'text/html' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            
-            const today = new Date();
-            const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-            a.download = `Client-Onboarding-Tracker-${dateStr}.html`;
-            
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-            
-            alert('✅ New template downloaded! This copy has a unique ID and will have completely separate data storage from all other copies.');
-        }
-        
         loadData();
     </script>
-
-
-</body></html>
+</body>
+</html>
